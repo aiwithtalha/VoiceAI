@@ -1,0 +1,237 @@
+# =============================================================================
+# Universal Voice AI Platform - Git Ignore
+# =============================================================================
+
+# ==========================================
+# Dependencies
+# ==========================================
+node_modules/
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# ==========================================
+# Build Outputs
+# ==========================================
+# Next.js
+.next/
+out/
+
+# Turbo
+.turbo/
+
+# Build directories
+dist/
+build/
+*.tsbuildinfo
+
+# ==========================================
+# Environment Variables
+# ==========================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+
+# Keep example files
+!.env.example
+
+# ==========================================
+# Testing
+# ==========================================
+coverage/
+.nyc_output/
+*.lcov
+
+# ==========================================
+# Logs
+# ==========================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ==========================================
+# Runtime Data
+# ==========================================
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# ==========================================
+# Cache
+# ==========================================
+.cache/
+*.cache
+.eslintcache
+.stylelintcache
+.parcel-cache/
+
+# ==========================================
+# IDE & Editor
+# ==========================================
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# IntelliJ / WebStorm
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ==========================================
+# OS Generated Files
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ==========================================
+# Docker
+# ==========================================
+.dockerignore
+docker-compose.override.yml
+docker-compose.*.yml
+!docker-compose.yml
+
+# ==========================================
+# Database
+# ==========================================
+*.db
+*.sqlite
+*.sqlite3
+
+# ==========================================
+# Misc
+# ==========================================
+*.pem
+*.cert
+*.key
+.vercel
+.netlify
+
+# Local SSL certificates
+*.crt
+*.csr
+*.der
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+temp/
+
+# ==========================================
+# Package Manager
+# ==========================================
+# npm
+package-lock.json
+!**/package-lock.json
+
+# yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.yarn-integrity
+
+# pnpm
+pnpm-lock.yaml
+.pnpm-store/
+
+# ==========================================
+# Secrets & Credentials
+# ==========================================
+# Service account keys
+*service-account*.json
+*service_account*.json
+*google-credentials*.json
+*firebase-adminsdk*.json
+
+# AWS credentials
+.aws/
+*.aws
+
+# SSH keys
+.ssh/
+*.pem
+*.ppk
+
+# ==========================================
+# Generated Files
+# ==========================================
+# Prisma
+prisma/*.db
+prisma/migrations/*/migration_lock.toml
+
+# Generated types
+**/generated/
+
+# Storybook
+storybook-static/
+
+# Playwright
+playwright-report/
+test-results/
+playwright/.cache/
+
+# Cypress
+cypress/videos/
+cypress/screenshots/
+cypress/downloads/
+
+# ==========================================
+# Project Specific
+# ==========================================
+# Voice recordings (local development)
+recordings/
+uploads/
+
+# AI model cache
+models/
+.ai-cache/
+
+# Twilio webhook tunnel
+ngrok.yml
+.ngrok/
+
+# Local audio files
+*.wav
+*.mp3
+*.ogg
+*.m4a
+!**/assets/**/*.wav
+!**/assets/**/*.mp3
+!**/assets/**/*.ogg
+!**/assets/**/*.m4a

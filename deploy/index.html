@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Voice AI Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .gradient-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .pulse-ring { animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
+        @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(2); opacity: 0; } }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; border-radius: 16px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; }
+        .toast { position: fixed; bottom: 20px; right: 20px; padding: 16px 24px; border-radius: 8px; color: white; font-weight: 500; z-index: 200; transform: translateX(400px); transition: transform 0.3s ease; }
+        .toast.show { transform: translateX(0); }
+        .toast.success { background: #10b981; }
+        .toast.error { background: #ef4444; }
+        .toast.info { background: #3b82f6; }
+        .page { display: none; }
+        .page.active { display: block; }
+        .sidebar-link { transition: all 0.2s; }
+        .sidebar-link:hover, .sidebar-link.active { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
+        .chat-message { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <div id="toast" class="toast"></div>
+    <nav id="public-nav" class="fixed w-full bg-white/80 backdrop-blur-md border-b border-slate-200 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-2 cursor-pointer" onclick="showPublicPage('home')">
+                    <div class="w-8 h-8 gradient-bg rounded-lg flex items-center justify-center"><i data-lucide="phone-call" class="w-5 h-5 text-white"></i></div>
+                    <span class="text-xl font-bold text-slate-900">VoiceAI</span>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <button onclick="showPublicPage('features')" class="text-slate-600 hover:text-slate-900">Features</button>
+                    <button onclick="showPublicPage('pricing')" class="text-slate-600 hover:text-slate-900">Pricing</button>
+                    <button onclick="showPublicPage('docs')" class="text-slate-600 hover:text-slate-900">Docs</button>
+                    <button onclick="showPublicPage('demo')" class="text-slate-600 hover:text-slate-900">Demo</button>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="openModal('loginModal')" class="hidden md:block text-slate-600 hover:text-slate-900">Sign In</button>
+                    <button onclick="openModal('signupModal')" class="gradient-bg text-white px-6 py-2 rounded-lg font-medium hover:opacity-90 transition">Get Started</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div id="dashboard-layout" class="hidden">
+        <aside class="fixed left-0 top-0 h-full w-64 bg-white border-r border-slate-200 z-40 overflow-y-auto">
+            <div class="p-4">
+                <div class="flex items-center space-x-2 mb-8">
+                    <div class="w-8 h-8 gradient-bg rounded-lg flex items-center justify-center"><i data-lucide="phone-call" class="w-5 h-5 text-white"></i></div>
+                    <span class="text-xl font-bold text-slate-900">VoiceAI</span>
+                </div>
+                <nav class="space-y-1">
+                    <button onclick="showDashboardPage('overview')" class="sidebar-link w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-slate-600" data-page="overview"><i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Overview</span></button>
+                    <button onclick="showDashboardPage('assistants')" class="sidebar-link w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-slate-600" data-page="assistants"><i data-lucide="bot" class="w-5 h-5"></i><span>Assistants</span></button>
+                    <button onclick="showDashboardPage('phone-numbers')" class="sidebar-link w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-slate-600" data-page="phone-numbers"><i data-lucide="phone" class="w-5 h-5"></i><span>Phone Numbers</span></button>
+                    <button onclick="showDashboardPage('calls')" class="sidebar-link w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-slate-600" data-page="calls"><i data-lucide="phone-call" class="w-5 h-5"></i><span>Call Logs</span></button>
+                    <button onclick="showDashboardPage('billing')" class="sidebar-link w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-slate-600" data-page="billing"><i data-lucide="credit-card" class="w-5 h-5"></i><span>Billing</span></button>
+                    <button onclick="showDashboardPage('integrations')" class="sidebar-link w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-slate-600" data-page="integrations"><i data-lucide="plug" class="w-5 h-5"></i><span>Integrations</span></button>
+                    <button onclick="showDashboardPage('team')" class="sidebar-link w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-slate-600" data-page="team"><i data-lucide="users" class="w-5 h-5"></i><span>Team</span></button>
+                    <button onclick="showDashboardPage('settings')" class="sidebar-link w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-slate-600" data-page="settings"><i data-lucide="settings" class="w-5 h-5"></i><span>Settings</span></button>
+                </nav>
+            </div>
+            <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-200">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center"><span id="user-initials" class="text-white font-semibold">U</span></div>
+                    <div class="flex-1 min-w-0">
+                        <p id="user-name" class="text-sm font-medium text-slate-900 truncate">User</p>
+                        <p id="user-email" class="text-xs text-slate-500 truncate">user@example.com</p>
+                    </div>
+                    <button onclick="logout()" class="text-slate-400 hover:text-slate-600"><i data-lucide="log-out" class="w-5 h-5"></i></button>
+                </div>
+            </div>
+        </aside>
+
+        <main class="ml-64 min-h-screen">
+            <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+                <div class="flex justify-between items-center px-8 py-4">
+                    <h1 id="page-title" class="text-2xl font-bold text-slate-900">Overview</h1>
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-slate-100 px-4 py-2 rounded-lg flex items-center space-x-2">
+                            <i data-lucide="wallet" class="w-4 h-4 text-slate-600"></i>
+                            <span class="text-sm text-slate-600">Balance:</span>
+                            <span id="wallet-balance" class="text-sm font-semibold text-green-600">$124.50</span>
+                        </div>
+                        <button onclick="openModal('topupModal')" class="gradient-bg text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90">+ Top Up</button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="p-8">
+                <div id="dashboard-overview" class="dashboard-page">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center"><i data-lucide="phone-call" class="w-6 h-6 text-blue-600"></i></div>
+                                <span class="text-green-600 text-sm font-medium">+12%</span>
+                            </div>
+                            <p class="text-slate-600 text-sm">Calls Today</p>
+                            <p class="text-3xl font-bold text-slate-900">24</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center"><i data-lucide="activity" class="w-6 h-6 text-green-600"></i></div>
+                                <span class="flex items-center text-green-600 text-sm"><span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>Live</span>
+                            </div>
+                            <p class="text-slate-600 text-sm">Active Calls</p>
+                            <p class="text-3xl font-bold text-slate-900">3</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                            <div class="flex items-center justify-between mb-4"><div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center"><i data-lucide="clock" class="w-6 h-6 text-purple-600"></i></div></div>
+                            <p class="text-slate-600 text-sm">Avg Duration</p>
+                            <p class="text-3xl font-bold text-slate-900">4:32</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center"><i data-lucide="trending-up" class="w-6 h-6 text-orange-600"></i></div>
+                                <span class="text-green-600 text-sm font-medium">+5%</span>
+                            </div>
+                            <p class="text-slate-600 text-sm">Success Rate</p>
+                            <p class="text-3xl font-bold text-slate-900">94%</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 mb-8">
+                        <h3 class="text-lg font-semibold text-slate-900 mb-4">Quick Actions</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <button onclick="openComposer()" class="p-4 border-2 border-dashed border-slate-200 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 transition text-center">
+                                <i data-lucide="plus" class="w-8 h-8 text-slate-400 mx-auto mb-2"></i>
+                                <p class="text-sm font-medium text-slate-700">New Assistant</p>
+                            </button>
+                            <button onclick="showDashboardPage('calls'); openModal('makeCallModal')" class="p-4 border-2 border-dashed border-slate-200 rounded-xl hover:border-green-500 hover:bg-green-50 transition text-center">
+                                <i data-lucide="phone" class="w-8 h-8 text-slate-400 mx-auto mb-2"></i>
+                                <p class="text-sm font-medium text-slate-700">Make Call</p>
+                            </button>
+                            <button onclick="showDashboardPage('phone-numbers'); openModal('buyNumberModal')" class="p-4 border-2 border-dashed border-slate-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition text-center">
+                                <i data-lucide="hash" class="w-8 h-8 text-slate-400 mx-auto mb-2"></i>
+                                <p class="text-sm font-medium text-slate-700">Buy Number</p>
+                            </button>
+                            <button onclick="openModal('inviteModal')" class="p-4 border-2 border-dashed border-slate-200 rounded-xl hover:border-orange-500 hover:bg-orange-50 transition text-center">
+                                <i data-lucide="user-plus" class="w-8 h-8 text-slate-400 mx-auto mb-2"></i>
+                                <p class="text-sm font-medium text-slate-700">Invite Team</p>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                            <h3 class="text-lg font-semibold text-slate-900">Recent Calls</h3>
+                            <button onclick="showDashboardPage('calls')" class="text-indigo-600 hover:text-indigo-700 text-sm font-medium">View All</button>
+                        </div>
+                        <div id="recent-calls-list"></div>
+                    </div>
+                </div>
+
+                <div id="dashboard-assistants" class="dashboard-page hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <div><h2 class="text-2xl font-bold text-slate-900">Assistants</h2><p class="text-slate-600">Manage your AI voice agents</p></div>
+                        <button onclick="openComposer()" class="gradient-bg text-white px-6 py-3 rounded-lg font-medium hover:opacity-90 transition flex items-center"><i data-lucide="plus" class="w-5 h-5 mr-2"></i>Create Assistant</button>
+                    </div>
+                    <div id="assistants-list" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                </div>
+
+                <div id="dashboard-phone-numbers" class="dashboard-page hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <div><h2 class="text-2xl font-bold text-slate-900">Phone Numbers</h2><p class="text-slate-600">Manage your phone numbers</p></div>
+                        <button onclick="openModal('buyNumberModal')" class="gradient-bg text-white px-6 py-3 rounded-lg font-medium hover:opacity-90 transition flex items-center"><i data-lucide="plus" class="w-5 h-5 mr-2"></i>Buy Number</button>
+                    </div>
+                    <div id="phone-numbers-list" class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden"></div>
+                </div>
+
+                <div id="dashboard-calls" class="dashboard-page hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <div><h2 class="text-2xl font-bold text-slate-900">Call Logs</h2><p class="text-slate-600">View all your calls</p></div>
+                        <button onclick="openModal('makeCallModal')" class="gradient-bg text-white px-6 py-3 rounded-lg font-medium hover:opacity-90 transition flex items-center"><i data-lucide="phone" class="w-5 h-5 mr-2"></i>Make Call</button>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4 mb-6">
+                        <div class="flex flex-wrap gap-4">
+                            <select id="call-filter-status" onchange="filterCalls()" class="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"><option value="">All Status</option><option value="completed">Completed</option><option value="failed">Failed</option><option value="voicemail">Voicemail</option></select>
+                            <select id="call-filter-assistant" onchange="filterCalls()" class="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"><option value="">All Assistants</option></select>
+                            <input type="date" id="call-filter-date" onchange="filterCalls()" class="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+                    <div id="all-calls-list" class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden"></div>
+                </div>
+
+                <div id="dashboard-billing" class="dashboard-page hidden">
+                    <div class="grid lg:grid-cols-3 gap-6 mb-8">
+                        <div class="lg:col-span-2">
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                                <h3 class="text-lg font-semibold text-slate-900 mb-4">Wallet</h3>
+                                <div class="flex items-center justify-between mb-6">
+                                    <div><p class="text-slate-600 text-sm">Current Balance</p><p id="billing-balance" class="text-4xl font-bold text-slate-900">$124.50</p></div>
+                                    <button onclick="openModal('topupModal')" class="gradient-bg text-white px-6 py-3 rounded-lg font-medium hover:opacity-90 transition">+ Top Up</button>
+                                </div>
+                                <div class="border-t border-slate-200 pt-4">
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span class="text-slate-600">Auto-recharge:</span>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" id="auto-recharge" class="sr-only peer" onchange="toggleAutoRecharge()">
+                                            <div class="w-11 h-6 bg-slate-200 peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                            <h3 class="text-lg font-semibold text-slate-900 mb-4">This Month</h3>
+                            <div class="space-y-4">
+                                <div class="flex justify-between"><span class="text-slate-600">Voice Calls</span><span class="font-medium">$45.20</span></div>
+                                <div class="flex justify-between"><span class="text-slate-600">Phone Numbers</span><span class="font-medium">$3.00</span></div>
+                                <div class="flex justify-between"><span class="text-slate-600">SMS</span><span class="font-medium">$0.50</span></div>
+                                <div class="border-t border-slate-200 pt-4 flex justify-between font-semibold"><span>Total</span><span>$48.70</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-slate-200"><h3 class="text-lg font-semibold text-slate-900">Transaction History</h3></div>
+                        <div id="transactions-list"></div>
+                    </div>
+                </div>
+
+                <div id="dashboard-integrations" class="dashboard-page hidden">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-6">Integrations</h2>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center"><i data-lucide="calendar" class="w-6 h-6 text-blue-600"></i></div>
+                                <span id="google-status" class="px-3 py-1 bg-slate-100 text-slate-600 text-sm rounded-full">Not Connected</span>
+                            </div>
+                            <h3 class="font-semibold text-slate-900 mb-2">Google Calendar</h3>
+                            <p class="text-slate-600 text-sm mb-4">Book appointments directly to Google Calendar</p>
+                            <button onclick="connectGoogle()" id="google-connect-btn" class="w-full py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition">Connect</button>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center"><i data-lucide="table" class="w-6 h-6 text-green-600"></i></div>
+                                <span class="px-3 py-1 bg-slate-100 text-slate-600 text-sm rounded-full">Not Connected</span>
+                            </div>
+                            <h3 class="font-semibold text-slate-900 mb-2">Google Sheets</h3>
+                            <p class="text-slate-600 text-sm mb-4">Log call data to Google Sheets automatically</p>
+                            <button onclick="showToast('Google Sheets integration coming soon!', 'info')" class="w-full py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition">Connect</button>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center"><i data-lucide="webhook" class="w-6 h-6 text-purple-600"></i></div>
+                                <span class="px-3 py-1 bg-green-100 text-green-600 text-sm rounded-full">Active</span>
+                            </div>
+                            <h3 class="font-semibold text-slate-900 mb-2">Webhooks</h3>
+                            <p class="text-slate-600 text-sm mb-4">Receive real-time events via webhooks</p>
+                            <button onclick="showDashboardPage('settings'); showToast('Configure webhooks in Settings', 'info')" class="w-full py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition">Configure</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="dashboard-team" class="dashboard-page hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <div><h2 class="text-2xl font-bold text-slate-900">Team Members</h2><p class="text-slate-600">Manage your team</p></div>
+                        <button onclick="openModal('inviteModal')" class="gradient-bg text-white px-6 py-3 rounded-lg font-medium hover:opacity-90 transition flex items-center"><i data-lucide="user-plus" class="w-5 h-5 mr-2"></i>Invite Member</button>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden"><div id="team-list"></div></div>
+                </div>
+
+                <div id="dashboard-settings" class="dashboard-page hidden">
+                    <h2 class="text-2xl font-bold text-slate-900 mb-6">Settings</h2>
+                    <div class="space-y-6">
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                            <h3 class="text-lg font-semibold text-slate-900 mb-4">Workspace</h3>
+                            <div class="space-y-4">
+                                <div><label class="block text-sm font-medium text-slate-700 mb-2">Workspace Name</label><input type="text" id="workspace-name" value="My Workspace" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+                                <div><label class="block text-sm font-medium text-slate-700 mb-2">Timezone</label><select class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"><option>America/New_York</option><option>America/Los_Angeles</option><option>Europe/London</option><option>Asia/Tokyo</option></select></div>
+                                <button onclick="saveSettings()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">Save Changes</button>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                            <h3 class="text-lg font-semibold text-slate-900 mb-4">API Keys</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                                    <div><p class="font-medium text-slate-900">Production Key</p><p class="text-sm text-slate-500">Created on Jan 15, 2026</p></div>
+                                    <div class="flex items-center space-x-2"><code class="bg-slate-200 px-3 py-1 rounded text-sm">sk_live_••••••••</code><button onclick="showToast('API key copied!', 'success')" class="text-indigo-600 hover:text-indigo-700"><i data-lucide="copy" class="w-5 h-5"></i></button></div>
+                                </div>
+                                <button onclick="showToast('New API key generated!', 'success')" class="text-indigo-600 hover:text-indigo-700 text-sm font-medium">+ Generate New Key</button>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                            <h3 class="text-lg font-semibold text-slate-900 mb-4">Webhooks</h3>
+                            <div class="space-y-4">
+                                <div><label class="block text-sm font-medium text-slate-700 mb-2">Webhook URL</label><input type="url" placeholder="https://your-app.com/webhook" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+                                <div><label class="block text-sm font-medium text-slate-700 mb-2">Events</label><div class="space-y-2"><label class="flex items-center"><input type="checkbox" checked class="mr-2"><span class="text-sm text-slate-700">call.started</span></label><label class="flex items-center"><input type="checkbox" checked class="mr-2"><span class="text-sm text-slate-700">call.ended</span></label><label class="flex items-center"><input type="checkbox" class="mr-2"><span class="text-sm text-slate-700">appointment.booked</span></label></div></div>
+                                <button onclick="saveWebhook()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">Save Webhook</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="composerModal" class="modal">
+        <div class="modal-content" style="max-width: 800px; height: 90vh;">
+            <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+                <h3 class="text-xl font-semibold text-slate-900">Create Assistant</h3>
+                <button onclick="closeComposer()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="flex h-[calc(90vh-80px)]">
+                <div class="flex-1 flex flex-col border-r border-slate-200">
+                    <div id="composer-chat" class="flex-1 overflow-y-auto p-4 space-y-4">
+                        <div class="chat-message flex items-start">
+                            <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center mr-3 flex-shrink-0"><i data-lucide="bot" class="w-4 h-4 text-white"></i></div>
+                            <div class="bg-slate-100 rounded-lg p-3 max-w-xs"><p class="text-slate-700 text-sm">Hi! I'm your AI assistant builder. What kind of voice agent would you like to create?</p></div>
+                        </div>
+                    </div>
+                    <div class="p-4 border-t border-slate-200">
+                        <div class="flex space-x-2">
+                            <input type="text" id="composer-input" placeholder="Describe your assistant..." class="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500" onkeypress="if(event.key==='Enter')sendComposerMessage()">
+                            <button onclick="sendComposerMessage()" class="gradient-bg text-white px-4 py-2 rounded-lg hover:opacity-90"><i data-lucide="send" class="w-5 h-5"></i></button>
+                        </div>
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            <button onclick="setComposerInput('I need a sales assistant')" class="text-xs px-3 py-1 bg-slate-100 rounded-full text-slate-600 hover:bg-slate-200">Sales</button>
+                            <button onclick="setComposerInput('Create a customer support bot')" class="text-xs px-3 py-1 bg-slate-100 rounded-full text-slate-600 hover:bg-slate-200">Support</button>
+                            <button onclick="setComposerInput('Build an appointment scheduler')" class="text-xs px-3 py-1 bg-slate-100 rounded-full text-slate-600 hover:bg-slate-200">Booking</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="w-80 bg-slate-50 p-4 overflow-y-auto">
+                    <h4 class="font-semibold text-slate-900 mb-4">Configuration</h4>
+                    <div id="composer-config" class="space-y-4">
+                        <div><label class="block text-sm font-medium text-slate-700 mb-1">Name</label><input type="text" id="assistant-name" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"></div>
+                        <div><label class="block text-sm font-medium text-slate-700 mb-1">Goal</label><select id="assistant-goal" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"><option value="custom">Custom</option><option value="sales">Sales Qualification</option><option value="support">Customer Support</option><option value="booking">Appointment Booking</option><option value="survey">Survey/Feedback</option></select></div>
+                        <div><label class="block text-sm font-medium text-slate-700 mb-1">Voice</label><select id="assistant-voice" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"><option value="alloy">Alloy (Female)</option><option value="echo">Echo (Male)</option><option value="fable">Fable (Male)</option><option value="onyx">Onyx (Male)</option><option value="nova">Nova (Female)</option><option value="shimmer">Shimmer (Female)</option></select></div>
+                        <div><label class="block text-sm font-medium text-slate-700 mb-1">Language</label><select id="assistant-language" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"><option value="en">English</option><option value="es">Spanish</option><option value="fr">French</option><option value="de">German</option></select></div>
+                        <div class="pt-4 border-t border-slate-200">
+                            <button onclick="createAssistant()" class="w-full gradient-bg text-white py-2 rounded-lg font-medium hover:opacity-90">Create Assistant</button>
+                            <button onclick="testAssistant()" class="w-full mt-2 border border-slate-300 text-slate-700 py-2 rounded-lg hover:bg-slate-100">Test Call</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="topupModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+                <h3 class="text-xl font-semibold text-slate-900">Top Up Wallet</h3>
+                <button onclick="closeModal('topupModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-6">
+                <p class="text-slate-600 mb-4">Select an amount to add to your wallet:</p>
+                <div class="grid grid-cols-3 gap-3 mb-6">
+                    <button onclick="selectTopup(10)" class="topup-amount p-4 border-2 border-slate-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition text-center"><p class="text-2xl font-bold text-slate-900">$10</p></button>
+                    <button onclick="selectTopup(25)" class="topup-amount p-4 border-2 border-slate-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition text-center"><p class="text-2xl font-bold text-slate-900">$25</p></button>
+                    <button onclick="selectTopup(50)" class="topup-amount p-4 border-2 border-slate-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition text-center"><p class="text-2xl font-bold text-slate-900">$50</p></button>
+                    <button onclick="selectTopup(100)" class="topup-amount p-4 border-2 border-slate-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition text-center"><p class="text-2xl font-bold text-slate-900">$100</p></button>
+                    <button onclick="selectTopup(250)" class="topup-amount p-4 border-2 border-slate-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition text-center"><p class="text-2xl font-bold text-slate-900">$250</p></button>
+                    <button onclick="selectTopup(500)" class="topup-amount p-4 border-2 border-slate-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition text-center"><p class="text-2xl font-bold text-slate-900">$500</p></button>
+                </div>
+                <div id="selected-amount" class="hidden mb-6 p-4 bg-indigo-50 rounded-lg"><p class="text-center text-indigo-900 font-medium">Selected: <span id="topup-value">$25</span></p></div>
+                <button onclick="processTopup()" id="topup-btn" class="w-full gradient-bg text-white py-3 rounded-lg font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>Proceed to Payment</button>
+                <p class="text-center text-xs text-slate-500 mt-4">Powered by Stripe. Secure payment processing.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="makeCallModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+                <h3 class="text-xl font-semibold text-slate-900">Make a Call</h3>
+                <button onclick="closeModal('makeCallModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-6">
+                <form onsubmit="makeCall(event)">
+                    <div class="mb-4"><label class="block text-sm font-medium text-slate-700 mb-2">Phone Number</label><input type="tel" id="call-to" placeholder="+1 (555) 000-0000" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500" required></div>
+                    <div class="mb-4"><label class="block text-sm font-medium text-slate-700 mb-2">From Number</label><select id="call-from" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"></select></div>
+                    <div class="mb-6"><label class="block text-sm font-medium text-slate-700 mb-2">Assistant</label><select id="call-assistant" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"></select></div>
+                    <button type="submit" class="w-full gradient-bg text-white py-3 rounded-lg font-semibold hover:opacity-90 transition flex items-center justify-center"><i data-lucide="phone" class="w-5 h-5 mr-2"></i>Initiate Call</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="buyNumberModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+                <h3 class="text-xl font-semibold text-slate-900">Buy Phone Number</h3>
+                <button onclick="closeModal('buyNumberModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-6">
+                <div class="mb-4"><label class="block text-sm font-medium text-slate-700 mb-2">Country</label><select class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"><option value="US">United States</option><option value="CA">Canada</option><option value="UK">United Kingdom</option></select></div>
+                <div class="mb-4"><label class="block text-sm font-medium text-slate-700 mb-2">Area Code (Optional)</label><input type="text" id="area-code" placeholder="e.g., 415" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"></div>
+                <button onclick="searchNumbers()" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700 transition mb-4">Search Numbers</button>
+                <div id="available-numbers" class="space-y-2 max-h-60 overflow-y-auto"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="inviteModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+                <h3 class="text-xl font-semibold text-slate-900">Invite Team Member</h3>
+                <button onclick="closeModal('inviteModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-6">
+                <form onsubmit="inviteMember(event)">
+                    <div class="mb-4"><label class="block text-sm font-medium text-slate-700 mb-2">Email</label><input type="email" id="invite-email" placeholder="colleague@company.com" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500" required></div>
+                    <div class="mb-6"><label class="block text-sm font-medium text-slate-700 mb-2">Role</label><select id="invite-role" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"><option value="admin">Admin</option><option value="member">Member</option><option value="viewer">Viewer</option></select></div>
+                    <button type="submit" class="w-full gradient-bg text-white py-3 rounded-lg font-semibold hover:opacity-90 transition">Send Invitation</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="callDetailsModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+                <h3 class="text-xl font-semibold text-slate-900">Call Details</h3>
+                <button onclick="closeModal('callDetailsModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-6" id="callDetailsContent"></div>
+        </div>
+    </div>
+
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+                <h3 class="text-xl font-semibold text-slate-900">Sign In</h3>
+                <button onclick="closeModal('loginModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-6">
+                <form onsubmit="handleLogin(event)">
+                    <div class="mb-4"><label class="block text-sm font-medium text-slate-700 mb-2">Email</label><input type="email" id="loginEmail" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500" required></div>
+                    <div class="mb-6"><label class="block text-sm font-medium text-slate-700 mb-2">Password</label><input type="password" id="loginPassword" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500" required></div>
+                    <button type="submit" class="w-full gradient-bg text-white py-3 rounded-lg font-semibold hover:opacity-90 transition">Sign In</button>
+                </form>
+                <div class="mt-4 text-center"><p class="text-sm text-slate-600">Don't have an account? <button onclick="closeModal('loginModal'); openModal('signupModal')" class="text-indigo-600 hover:underline">Sign up</button></p></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="signupModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+                <h3 class="text-xl font-semibold text-slate-900">Create Account</h3>
+                <button onclick="closeModal('signupModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-6">
+                <form onsubmit="handleSignup(event)">
+                    <div class="mb-4"><label class="block text-sm font-medium text-slate-700 mb-2">Full Name</label><input type="text" id="signupName" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500" required></div>
+                    <div class="mb-4"><label class="block text-sm font-medium text-slate-700 mb-2">Email</label><input type="email" id="signupEmail" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500" required></div>
+                    <div class="mb-6"><label class="block text-sm font-medium text-slate-700 mb-2">Password</label><input type="password" id="signupPassword" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500" required></div>
+                    <button type="submit" class="w-full gradient-bg text-white py-3 rounded-lg font-semibold hover:opacity-90 transition">Create Account</button>
+                </form>
+                <div class="mt-4 text-center"><p class="text-sm text-slate-600">Already have an account? <button onclick="closeModal('signupModal'); openModal('loginModal')" class="text-indigo-600 hover:underline">Sign in</button></p></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="public-pages">
+        <div id="public-home" class="page active">
+            <section class="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+                <div class="max-w-7xl mx-auto text-center">
+                    <div class="inline-flex items-center px-4 py-2 bg-indigo-50 rounded-full text-indigo-600 text-sm font-medium mb-8 cursor-pointer" onclick="showToast('GPT-4o Voice support coming soon!', 'info')"><span class="w-2 h-2 bg-indigo-600 rounded-full mr-2"></span>Now with GPT-4o Voice Support</div>
+                    <h1 class="text-5xl md:text-7xl font-bold text-slate-900 mb-6 leading-tight">Build AI Voice Agents in<br><span class="gradient-text">Minutes, Not Months</span></h1>
+                    <p class="text-xl text-slate-600 max-w-3xl mx-auto mb-10">Create, deploy, and manage real-time AI voice agents with our self-serve platform. Pay-as-you-go, provider-agnostic, and production-ready.</p>
+                    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+                        <button onclick="openModal('signupModal')" class="gradient-bg text-white px-8 py-4 rounded-xl font-semibold text-lg hover:opacity-90 transition flex items-center"><i data-lucide="rocket" class="w-5 h-5 mr-2"></i>Start Building Free</button>
+                        <button onclick="showPublicPage('demo')" class="bg-white text-slate-700 border-2 border-slate-200 px-8 py-4 rounded-xl font-semibold text-lg hover:border-slate-300 transition flex items-center"><i data-lucide="play-circle" class="w-5 h-5 mr-2"></i>Try Demo Call</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div id="public-features" class="page hidden">
+            <section class="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+                <div class="max-w-7xl mx-auto">
+                    <div class="text-center mb-16"><h2 class="text-3xl font-bold text-slate-900 mb-4">Platform Features</h2><p class="text-slate-600 max-w-2xl mx-auto">Everything you need to build, deploy, and scale AI voice agents</p></div>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 card-hover"><div class="w-12 h-12 gradient-bg rounded-xl flex items-center justify-center mb-4"><i data-lucide="message-square" class="w-6 h-6 text-white"></i></div><h3 class="text-xl font-semibold text-slate-900 mb-2">Chat-to-Agent Builder</h3><p class="text-slate-600">Build AI agents through natural conversation. No coding required.</p></div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 card-hover"><div class="w-12 h-12 gradient-bg rounded-xl flex items-center justify-center mb-4"><i data-lucide="zap" class="w-6 h-6 text-white"></i></div><h3 class="text-xl font-semibold text-slate-900 mb-2">Real-time Streaming</h3><p class="text-slate-600">Low-latency voice with barge-in support. Natural conversations.</p></div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 card-hover"><div class="w-12 h-12 gradient-bg rounded-xl flex items-center justify-center mb-4"><i data-lucide="plug" class="w-6 h-6 text-white"></i></div><h3 class="text-xl font-semibold text-slate-900 mb-2">Provider Agnostic</h3><p class="text-slate-600">Choose your providers: Twilio, Deepgram, ElevenLabs, OpenAI.</p></div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div id="public-pricing" class="page hidden">
+            <section class="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+                <div class="max-w-7xl mx-auto">
+                    <div class="text-center mb-16"><h2 class="text-3xl font-bold text-slate-900 mb-4">Simple, Transparent Pricing</h2><p class="text-slate-600">Pay only for what you use. No hidden fees.</p></div>
+                    <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                        <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+                            <h3 class="text-xl font-semibold text-slate-900 mb-2">Starter</h3>
+                            <div class="mb-6"><span class="text-4xl font-bold text-slate-900">$0</span><span class="text-slate-600">/month</span></div>
+                            <ul class="space-y-3 mb-8"><li class="flex items-center text-slate-700"><i data-lucide="check" class="w-5 h-5 text-green-500 mr-2"></i>$5 free credits</li><li class="flex items-center text-slate-700"><i data-lucide="check" class="w-5 h-5 text-green-500 mr-2"></i>1 assistant</li><li class="flex items-center text-slate-700"><i data-lucide="check" class="w-5 h-5 text-green-500 mr-2"></i>100 calls/month</li></ul>
+                            <button onclick="openModal('signupModal')" class="w-full py-3 border-2 border-slate-200 rounded-lg font-semibold text-slate-700 hover:border-slate-300 transition">Get Started</button>
+                        </div>
+                        <div class="bg-white p-8 rounded-2xl shadow-lg border-2 border-indigo-500 relative">
+                            <div class="absolute -top-4 left-1/2 transform -translate-x-1/2"><span class="gradient-bg text-white px-4 py-1 rounded-full text-sm font-medium">Most Popular</span></div>
+                            <h3 class="text-xl font-semibold text-slate-900 mb-2">Pay-as-you-go</h3>
+                            <div class="mb-6"><span class="text-4xl font-bold text-slate-900">$0.05</span><span class="text-slate-600">/min</span></div>
+                            <ul class="space-y-3 mb-8"><li class="flex items-center text-slate-700"><i data-lucide="check" class="w-5 h-5 text-green-500 mr-2"></i>Unlimited assistants</li><li class="flex items-center text-slate-700"><i data-lucide="check" class="w-5 h-5 text-green-500 mr-2"></i>Unlimited calls</li><li class="flex items-center text-slate-700"><i data-lucide="check" class="w-5 h-5 text-green-500 mr-2"></i>Advanced analytics</li></ul>
+                            <button onclick="openModal('signupModal')" class="w-full gradient-bg text-white py-3 rounded-lg font-semibold hover:opacity-90 transition">Start Free Trial</button>
+                        </div>
+                        <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+                            <h3 class="text-xl font-semibold text-slate-900 mb-2">Enterprise</h3>
+                            <div class="mb-6"><span class="text-4xl font-bold text-slate-900">Custom</span></div>
+                            <ul class="space-y-3 mb-8"><li class="flex items-center text-slate-700"><i data-lucide="check" class="w-5 h-5 text-green-500 mr-2"></i>Volume discounts</li><li class="flex items-center text-slate-700"><i data-lucide="check" class="w-5 h-5 text-green-500 mr-2"></i>Dedicated infrastructure</li><li class="flex items-center text-slate-700"><i data-lucide="check" class="w-5 h-5 text-green-500 mr-2"></i>SLA guarantee</li></ul>
+                            <button onclick="showToast('Contact sales@voiceai.com', 'info')" class="w-full py-3 border-2 border-slate-200 rounded-lg font-semibold text-slate-700 hover:border-slate-300 transition">Contact Sales</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div id="public-docs" class="page hidden">
+            <section class="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+                <div class="max-w-7xl mx-auto">
+                    <div class="grid lg:grid-cols-4 gap-8">
+                        <div class="lg:col-span-1">
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sticky top-24">
+                                <h3 class="font-semibold text-slate-900 mb-4">Documentation</h3>
+                                <nav class="space-y-2">
+                                    <button onclick="showDocTab('quickstart')" class="doc-tab-btn w-full text-left px-3 py-2 rounded-lg text-sm font-medium bg-indigo-50 text-indigo-700" data-tab="quickstart">Quick Start</button>
+                                    <button onclick="showDocTab('authentication')" class="doc-tab-btn w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50" data-tab="authentication">Authentication</button>
+                                    <button onclick="showDocTab('assistants')" class="doc-tab-btn w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50" data-tab="assistants">Assistants</button>
+                                    <button onclick="showDocTab('calls')" class="doc-tab-btn w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50" data-tab="calls">Calls</button>
+                                </nav>
+                            </div>
+                        </div>
+                        <div class="lg:col-span-3">
+                            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+                                <div id="doc-quickstart" class="doc-tab-content active">
+                                    <h1 class="text-3xl font-bold text-slate-900 mb-6">Quick Start</h1>
+                                    <p class="text-slate-600 mb-6">Get up and running in minutes.</p>
+                                    <h2 class="text-xl font-semibold text-slate-900 mb-4">1. Create an Account</h2>
+                                    <p class="text-slate-600 mb-4">Sign up for free and get $5 in credits.</p>
+                                    <h2 class="text-xl font-semibold text-slate-900 mb-4">2. Create Your First Assistant</h2>
+                                    <div class="bg-slate-900 rounded-lg p-4 mb-6"><code class="text-green-400 text-sm">curl -X POST https://api.voiceai.com/v1/assistants -H "Authorization: Bearer YOUR_API_KEY" -d '{"name": "Sales Assistant", "goal": "qualify_leads"}'</code></div>
+                                    <button onclick="openModal('signupModal')" class="gradient-bg text-white px-6 py-3 rounded-lg font-medium hover:opacity-90 transition">Get Started</button>
+                                </div>
+                                <div id="doc-authentication" class="doc-tab-content hidden"><h1 class="text-3xl font-bold text-slate-900 mb-6">Authentication</h1><p class="text-slate-600 mb-4">Use API keys to authenticate requests.</p><div class="bg-slate-900 rounded-lg p-4 mb-6"><code class="text-green-400 text-sm">Authorization: Bearer YOUR_API_KEY</code></div></div>
+                                <div id="doc-assistants" class="doc-tab-content hidden"><h1 class="text-3xl font-bold text-slate-900 mb-6">Assistants</h1><p class="text-slate-600 mb-4">Create and manage AI voice assistants.</p></div>
+                                <div id="doc-calls" class="doc-tab-content hidden"><h1 class="text-3xl font-bold text-slate-900 mb-6">Calls</h1><p class="text-slate-600 mb-4">Initiate and manage voice calls.</p></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div id="public-demo" class="page hidden">
+            <section class="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+                <div class="max-w-4xl mx-auto">
+                    <div class="text-center mb-12"><h2 class="text-3xl font-bold text-slate-900 mb-4">Experience Voice AI</h2><p class="text-slate-600">Try a live demo call right now.</p></div>
+                    <div class="bg-white rounded-2xl shadow-lg border border-slate-200 p-8">
+                        <div class="max-w-md mx-auto">
+                            <form id="demoForm" onsubmit="handleDemoSubmit(event)">
+                                <div class="mb-4"><label class="block text-sm font-medium text-slate-700 mb-2">Phone Number</label><input type="tel" id="phoneNumber" placeholder="+1 (555) 000-0000" class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500" required></div>
+                                <div class="mb-6"><label class="block text-sm font-medium text-slate-700 mb-2">Select Demo Type</label><select id="demoType" class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500"><option value="sales">Sales Qualification</option><option value="support">Customer Support</option><option value="booking">Appointment Booking</option><option value="survey">Feedback Survey</option></select></div>
+                                <button type="submit" id="callButton" class="w-full gradient-bg text-white py-4 rounded-xl font-semibold text-lg hover:opacity-90 transition flex items-center justify-center"><i data-lucide="phone-call" class="w-5 h-5 mr-2"></i><span id="callButtonText">Call Me Now</span></button>
+                            </form>
+                            <div id="callStatus" class="mt-6 hidden"><div class="bg-slate-50 rounded-lg p-4 text-center"><div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="loader" class="w-6 h-6 text-indigo-600 animate-spin"></i></div><p class="text-slate-700 font-medium">Initiating call...</p></div></div>
+                            <div id="callSuccess" class="mt-6 hidden"><div class="bg-green-50 border border-green-200 rounded-lg p-4 text-center"><div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="check-circle" class="w-6 h-6 text-green-600"></i></div><p class="text-green-800 font-medium">Call initiated successfully!</p><button onclick="resetDemoForm()" class="mt-4 text-green-700 hover:underline">Make another call</button></div></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <footer id="public-footer" class="bg-slate-900 text-slate-300 py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid md:grid-cols-4 gap-8 mb-8">
+                <div><div class="flex items-center space-x-2 mb-4"><div class="w-8 h-8 gradient-bg rounded-lg flex items-center justify-center"><i data-lucide="phone-call" class="w-5 h-5 text-white"></i></div><span class="text-xl font-bold text-white">VoiceAI</span></div><p class="text-slate-400 text-sm">Build and deploy AI voice agents in minutes.</p></div>
+                <div><h4 class="text-white font-semibold mb-4">Product</h4><ul class="space-y-2 text-sm"><li><button onclick="showPublicPage('features')" class="hover:text-white transition">Features</button></li><li><button onclick="showPublicPage('pricing')" class="hover:text-white transition">Pricing</button></li></ul></div>
+                <div><h4 class="text-white font-semibold mb-4">Developers</h4><ul class="space-y-2 text-sm"><li><button onclick="showPublicPage('docs')" class="hover:text-white transition">Documentation</button></li><li><button onclick="showPublicPage('docs')" class="hover:text-white transition">API Reference</button></li></ul></div>
+                <div><h4 class="text-white font-semibold mb-4">Company</h4><ul class="space-y-2 text-sm"><li><button onclick="showToast('About page coming soon!', 'info')" class="hover:text-white transition">About</button></li><li><button onclick="showToast('Contact: support@voiceai.com', 'info')" class="hover:text-white transition">Contact</button></li></ul></div>
+            </div>
+            <div class="border-t border-slate-800 pt-8 text-center"><p class="text-slate-400 text-sm">© 2026 VoiceAI Platform. All rights reserved.</p></div>
+        </div>
+    </footer>
+
+    <script>
+        function selectTopup(a){selectedTopupAmount=a;document.querySelectorAll('.topup-amount').forEach(e=>{e.classList.remove('border-indigo-500','bg-indigo-50');e.classList.add('border-slate-200');});event.target.closest('.topup-amount').classList.add('border-indigo-500','bg-indigo-50');event.target.closest('.topup-amount').classList.remove('border-slate-200');document.getElementById('selected-amount').classList.remove('hidden');document.getElementById('topup-value').textContent='$'+a;document.getElementById('topup-btn').disabled=false;}
+        function processTopup(){if(!selectedTopupAmount)return;walletBalance+=selectedTopupAmount;transactions.unshift({id:transactions.length+1,type:'credit',amount:selectedTopupAmount,description:'Wallet top-up',date:new Date().toISOString().split('T')[0]});document.getElementById('wallet-balance').textContent='$'+walletBalance.toFixed(2);document.getElementById('billing-balance').textContent='$'+walletBalance.toFixed(2);renderTransactions();closeModal('topupModal');showToast('Added $'+selectedTopupAmount+' to your wallet!','success');selectedTopupAmount=null;document.getElementById('topup-btn').disabled=true;document.getElementById('selected-amount').classList.add('hidden');}
+        function makeCall(e){e.preventDefault();const to=document.getElementById('call-to').value,from=document.getElementById('call-from').value,assistant=document.getElementById('call-assistant').value,cost=0.15;walletBalance-=cost;document.getElementById('wallet-balance').textContent='$'+walletBalance.toFixed(2);const newCall={id:calls.length+1,assistant:assistant,number:to,duration:'0:00',cost:cost,status:'in-progress',time:'Just now'};calls.unshift(newCall);renderRecentCalls();renderAllCalls();closeModal('makeCallModal');showToast('Calling '+to+'...','success');setTimeout(()=>{newCall.duration='2:34';newCall.status='completed';renderRecentCalls();renderAllCalls();},5000);}
+        function searchNumbers(){const ac=document.getElementById('area-code').value,c=document.getElementById('available-numbers');c.innerHTML='<p class="text-center text-slate-500 py-4">Searching...</p>';setTimeout(()=>{const nums=['+1 (555) '+(ac||'415')+'-0001','+1 (555) '+(ac||'415')+'-0002','+1 (555) '+(ac||'415')+'-0003'];c.innerHTML=nums.map(n=>'<div class="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:border-indigo-500 cursor-pointer" onclick="buyNumber(\''+n+'\')"><span class="font-medium text-slate-900">'+n+'</span><span class="text-green-600 font-medium">$1.00/mo</span></div>').join('');},1000);}
+        function buyNumber(n){phoneNumbers.push({id:phoneNumbers.length+1,number:n,assistant:null,status:'active'});walletBalance-=1;document.getElementById('wallet-balance').textContent='$'+walletBalance.toFixed(2);renderPhoneNumbers();closeModal('buyNumberModal');showToast('Purchased '+n,'success');}
+        function releaseNumber(id){if(confirm('Release this number?')){phoneNumbers=phoneNumbers.filter(p=>p.id!==id);renderPhoneNumbers();showToast('Number released','info');}}
+        function inviteMember(e){e.preventDefault();const email=document.getElementById('invite-email').value,role=document.getElementById('invite-role').value;teamMembers.push({id:teamMembers.length+1,name:email.split('@')[0],email:email,role:role.charAt(0).toUpperCase()+role.slice(1),status:'Pending'});renderTeam();closeModal('inviteModal');showToast('Invitation sent to '+email,'success');}
+        function showCallDetails(id){const c=calls.find(x=>x.id===id);if(!c)return;document.getElementById('callDetailsContent').innerHTML='<div class="space-y-4"><div class="flex items-center justify-between"><span class="text-slate-600">Phone Number:</span><span class="font-medium text-slate-900">'+c.number+'</span></div><div class="flex items-center justify-between"><span class="text-slate-600">Assistant:</span><span class="font-medium text-slate-900">'+c.assistant+'</span></div><div class="flex items-center justify-between"><span class="text-slate-600">Duration:</span><span class="font-medium text-slate-900">'+c.duration+'</span></div><div class="flex items-center justify-between"><span class="text-slate-600">Cost:</span><span class="font-medium text-slate-900">$'+c.cost.toFixed(2)+'</span></div><div class="flex items-center justify-between"><span class="text-slate-600">Status:</span><span class="px-2 py-1 '+(c.status==='completed'?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700')+' text-xs rounded">'+c.status+'</span></div><div class="border-t pt-4 mt-4"><p class="text-sm font-medium text-slate-700 mb-2">Transcript</p><div class="bg-slate-50 rounded-lg p-4 space-y-2"><p class="text-sm text-slate-600"><span class="font-medium">AI:</span> Hello! How can I help you today?</p><p class="text-sm text-slate-600"><span class="font-medium">User:</span> Hi, I have a question about your services.</p><p class="text-sm text-slate-600"><span class="font-medium">AI:</span> I would be happy to help. What would you like to know?</p></div></div><button onclick="showToast(\'Recording playback would start here\',\'info\')" class="w-full py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition flex items-center justify-center"><i data-lucide="play" class="w-4 h-4 mr-2"></i>Play Recording</button></div>';openModal('callDetailsModal');lucide.createIcons();}
+        function editAssistant(id){showToast('Edit assistant feature would open editor','info');}
+        function testAssistantById(id){showToast('Test call would connect to voice engine','info');}
+        function connectGoogle(){document.getElementById('google-status').textContent='Connected';document.getElementById('google-status').className='px-3 py-1 bg-green-100 text-green-600 text-sm rounded-full';document.getElementById('google-connect-btn').textContent='Disconnect';document.getElementById('google-connect-btn').onclick=disconnectGoogle;showToast('Google Calendar connected!','success');}
+        function disconnectGoogle(){document.getElementById('google-status').textContent='Not Connected';document.getElementById('google-status').className='px-3 py-1 bg-slate-100 text-slate-600 text-sm rounded-full';document.getElementById('google-connect-btn').textContent='Connect';document.getElementById('google-connect-btn').onclick=connectGoogle;showToast('Google Calendar disconnected','info');}
+        function saveSettings(){showToast('Settings saved successfully!','success');}
+        function saveWebhook(){showToast('Webhook configuration saved!','success');}
+        function toggleAutoRecharge(){const e=document.getElementById('auto-recharge').checked;showToast(e?'Auto-recharge enabled':'Auto-recharge disabled','info');}
+        function filterCalls(){showToast('Filters applied','info');}
+        function updateCallFilters(){const s=document.getElementById('call-filter-assistant');assistants.forEach(a=>{const o=document.createElement('option');o.value=a.name;o.textContent=a.name;s.appendChild(o);});}
+        function updateMakeCallModal(){document.getElementById('call-from').innerHTML=phoneNumbers.map(p=>'<option value="'+p.number+'">'+p.number+'</option>').join('');document.getElementById('call-assistant').innerHTML=assistants.filter(a=>a.status==='active').map(a=>'<option value="'+a.name+'">'+a.name+'</option>').join('');}
+        function handleDemoSubmit(e){e.preventDefault();const p=document.getElementById('phoneNumber').value;document.getElementById('callButton').disabled=true;document.getElementById('callButtonText').textContent='Calling...';document.getElementById('callStatus').classList.remove('hidden');setTimeout(()=>{document.getElementById('callStatus').classList.add('hidden');document.getElementById('callSuccess').classList.remove('hidden');showToast('Demo call initiated to '+p+'!','success');},2000);}
+        function resetDemoForm(){document.getElementById('demoForm').reset();document.getElementById('callButton').disabled=false;document.getElementById('callButtonText').textContent='Call Me Now';document.getElementById('callSuccess').classList.add('hidden');}
+        function showDocTab(t){document.querySelectorAll('.doc-tab-content').forEach(x=>x.classList.add('hidden'));document.querySelectorAll('.doc-tab-btn').forEach(x=>{x.classList.remove('bg-indigo-50','text-indigo-700');x.classList.add('text-slate-600');});document.getElementById('doc-'+t).classList.remove('hidden');document.querySelector('[data-tab="'+t+'"]').classList.add('bg-indigo-50','text-indigo-700');document.querySelector('[data-tab="'+t+'"]').classList.remove('text-slate-600');}
+    </script>
+</body>
+</html>

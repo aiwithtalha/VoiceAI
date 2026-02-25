@@ -1,0 +1,68 @@
+{
+  "name": "voice-ai-platform",
+  "version": "1.0.0",
+  "description": "Universal Voice AI Platform - Real-time voice conversations with AI agents",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "dev:docker": "docker-compose up --build",
+    "dev:docker:tools": "docker-compose --profile tools up --build",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md}\"",
+    "type-check": "turbo run type-check",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "db:migrate": "npm run db:migrate --workspace=@voice-ai/database",
+    "db:migrate:dev": "npm run db:migrate:dev --workspace=@voice-ai/database",
+    "db:generate": "npm run db:generate --workspace=@voice-ai/database",
+    "db:studio": "npm run db:studio --workspace=@voice-ai/database",
+    "db:seed": "npm run db:seed --workspace=@voice-ai/database",
+    "db:reset": "npm run db:reset --workspace=@voice-ai/database",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "clean:docker": "docker-compose down -v --remove-orphans",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:prune": "docker system prune -af --volumes",
+    "setup": "npm install && npm run db:generate && npm run db:migrate:dev && npm run db:seed",
+    "setup:env": "cp .env.example .env && echo 'Please fill in your .env file with actual values'",
+    "postinstall": "npm run db:generate"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "eslint": "^8.55.0",
+    "prettier": "^3.1.0",
+    "prettier-plugin-tailwindcss": "^0.5.9",
+    "turbo": "^1.11.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "packageManager": "npm@10.2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/voice-ai-platform.git"
+  },
+  "keywords": [
+    "voice-ai",
+    "ai-agents",
+    "real-time-voice",
+    "twilio",
+    "deepgram",
+    "elevenlabs",
+    "nextjs",
+    "nodejs"
+  ],
+  "author": "Your Organization",
+  "license": "MIT"
+}

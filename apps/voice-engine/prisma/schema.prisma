@@ -1,0 +1,130 @@
+// Prisma schema for Voice Engine
+// Database schema for call logging and event tracking
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Call {
+  id                String       @id @default(uuid())
+  callSid           String       @unique
+  accountSid        String
+  from              String
+  to                String
+  direction         String       // inbound | outbound
+  status            String       // initializing | connected | speaking | listening | processing | transferring | ended | error
+  
+  // Relationships
+  assistantId       String
+  userId            String
+  organizationId    String
+  
+  // Timing
+  startedAt         DateTime     @default(now())
+  endedAt           DateTime?
+  duration          Int          @default(0) // in seconds
+  
+  // Billing
+  cost              Float        @default(0)
+  creditsDeducted   Float        @default(0)
+  
+  // Metadata
+  metadata          Json         @default("{}")
+  
+  // Relations
+  events            CallEvent[]
+  transcriptions    Transcription[]
+  
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  
+  @@index([userId])
+  @@index([organizationId])
+  @@index([status])
+  @@index([startedAt])
+  @@index([assistantId])
+}
+
+model CallEvent {
+  id          String   @id @default(uuid())
+  callId      String
+  call        Call     @relation(fields: [callId], references: [id], onDelete: Cascade)
+  
+  type        String   // call.started, call.ended, transcript.received, etc.
+  payload     Json     // Event-specific data
+  
+  timestamp   DateTime @default(now())
+  
+  @@index([callId])
+  @@index([type])
+  @@index([timestamp])
+}
+
+model Transcription {
+  id          String   @id @default(uuid())
+  callId      String
+  call        Call     @relation(fields: [callId], references: [id], onDelete: Cascade)
+  
+  speaker     String   // user | assistant
+  text        String
+  isFinal     Boolean  @default(false)
+  confidence  Float?
+  
+  // Word-level details (for final transcripts)
+  words       Json?    // Array of {word, start, end, confidence}
+  
+  timestamp   DateTime @default(now())
+  
+  @@index([callId])
+  @@index([timestamp])
+}
+
+model Assistant {
+  id                String   @id @default(uuid())
+  name              String
+  userId            String
+  organizationId    String
+  
+  // Configuration (stored as JSON)
+  config            Json
+  
+  isActive          Boolean  @default(true)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([organizationId])
+}
+
+model Tool {
+  id                String   @id @default(uuid())
+  name              String
+  description       String
+  type              String   // builtin | custom
+  
+  // For custom tools
+  endpoint          String?
+  method            String?
+  headers           Json?
+  timeoutMs         Int?
+  
+  // Parameters schema
+  parameters        Json
+  
+  userId            String?
+  organizationId    String?
+  
+  isActive          Boolean  @default(true)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([organizationId])
+}

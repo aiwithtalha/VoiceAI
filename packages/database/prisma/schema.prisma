@@ -1,0 +1,251 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// User Model
+// ==========================================
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String?   // Nullable for OAuth users
+  name          String?
+  image         String?
+  emailVerified DateTime?
+  
+  // OAuth provider IDs
+  googleId      String?   @unique
+  linkedinId    String?   @unique
+  
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  agents        Agent[]
+  phoneNumbers  PhoneNumber[]
+  subscription  Subscription?
+  
+  @@map("users")
+}
+
+// ==========================================
+// Subscription Model
+// ==========================================
+model Subscription {
+  id                   String   @id @default(uuid())
+  userId               String   @unique
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  status               SubscriptionStatus @default(free)
+  plan                 String   @default("free")
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean  @default(false)
+  
+  // Usage tracking
+  minutesUsed          Int      @default(0)
+  minutesLimit         Int      @default(60) // Free tier: 60 minutes
+  
+  // Timestamps
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  
+  // Relations
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("subscriptions")
+}
+
+enum SubscriptionStatus {
+  free
+  active
+  past_due
+  canceled
+  unpaid
+}
+
+// ==========================================
+// AI Agent Model
+// ==========================================
+model Agent {
+  id                    String   @id @default(uuid())
+  userId                String
+  name                  String
+  description           String?
+  
+  // Voice settings
+  voiceId               String   @default("21m00Tcm4TlvDq8ikWAM") // Rachel
+  language              String   @default("en-US")
+  
+  // AI configuration
+  systemPrompt          String?  @db.Text
+  greeting              String?
+  aiModel               String   @default("gpt-4")
+  temperature           Float    @default(0.7)
+  
+  // Call settings
+  maxDuration           Int      @default(300) // 5 minutes
+  recordCalls           Boolean  @default(true)
+  enableTranscription   Boolean  @default(true)
+  
+  // Status
+  isActive              Boolean  @default(true)
+  
+  // Timestamps
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relations
+  user                  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phoneNumbers          PhoneNumber[]
+  conversations         Conversation[]
+  
+  @@index([userId])
+  @@map("agents")
+}
+
+// ==========================================
+// Phone Number Model
+// ==========================================
+model PhoneNumber {
+  id          String   @id @default(uuid())
+  userId      String
+  agentId     String?
+  phoneNumber String   @unique
+  label       String?
+  
+  // Twilio configuration
+  twilioSid   String?
+  
+  // Status
+  isActive    Boolean  @default(true)
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agent        Agent?        @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  conversations Conversation[]
+  
+  @@index([userId])
+  @@index([agentId])
+  @@map("phone_numbers")
+}
+
+// ==========================================
+// Conversation Model
+// ==========================================
+model Conversation {
+  id                String   @id @default(uuid())
+  agentId           String
+  phoneNumberId     String?
+  
+  // Caller info
+  callerNumber      String?
+  callerName        String?
+  
+  // Twilio info
+  twilioCallSid     String?  @unique
+  
+  // Status
+  status            ConversationStatus @default(in_progress)
+  
+  // Duration and timing
+  startedAt         DateTime @default(now())
+  endedAt           DateTime?
+  duration          Int?     // in seconds
+  
+  // Recording
+  recordingUrl      String?
+  recordingDuration Int?     // in seconds
+  
+  // Cost tracking
+  cost              Float?   // in USD
+  
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  agent             Agent         @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  phoneNumber       PhoneNumber?  @relation(fields: [phoneNumberId], references: [id], onDelete: SetNull)
+  messages          Message[]
+  
+  @@index([agentId])
+  @@index([phoneNumberId])
+  @@index([status])
+  @@index([startedAt])
+  @@map("conversations")
+}
+
+enum ConversationStatus {
+  in_progress
+  completed
+  failed
+  voicemail
+}
+
+// ==========================================
+// Message Model
+// ==========================================
+model Message {
+  id              String   @id @default(uuid())
+  conversationId  String
+  
+  // Message content
+  role            MessageRole
+  content         String   @db.Text
+  
+  // Optional: For voice interactions
+  audioUrl        String?
+  duration        Int?     // in milliseconds
+  
+  // Timestamps
+  timestamp       DateTime @default(now())
+  createdAt       DateTime @default(now())
+  
+  // Relations
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  @@index([conversationId])
+  @@index([timestamp])
+  @@map("messages")
+}
+
+enum MessageRole {
+  user
+  assistant
+  system
+}
+
+// ==========================================
+// Webhook Event Model (for logging)
+// ==========================================
+model WebhookEvent {
+  id          String   @id @default(uuid())
+  provider    String   // twilio, stripe, etc.
+  eventType   String
+  payload     Json
+  processed   Boolean  @default(false)
+  error       String?
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  processedAt DateTime?
+  
+  @@index([provider])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("webhook_events")
+}
